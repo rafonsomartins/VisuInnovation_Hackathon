@@ -4,19 +4,19 @@ from shapely.geometry import Polygon, Point
 import numpy as np
 from geopy.distance import geodesic
 
-base_coordinates_file = "/home/ralves-e/.Drone_info/base_coordinates.txt"
+base_coordinates_file = "./.Drone_info/base_coordinates.txt"
 
 def load_base_coordinates():
-    if os.path.exists(base_coordinates_file):
-        with open(base_coordinates_file, 'r') as file:
-            return json.load(file)
-    else:
-        return None
+	if os.path.exists(base_coordinates_file):
+		with open(base_coordinates_file, 'r') as file:
+			return json.load(file)
+	else:
+		return None
 
 def save_base_coordinates(latitude, longitude):
-    home_coords = {"latitude": latitude, "longitude": longitude}
-    with open(base_coordinates_file, 'w') as file:
-        json.dump(home_coords, file)
+	home_coords = {"latitude": latitude, "longitude": longitude}
+	with open(base_coordinates_file, 'w') as file:
+		json.dump(home_coords, file)
 
 def get_distance_metres(loc1, loc2):
 	""" Returns the ground distance in meters between two location objects. """
@@ -66,17 +66,30 @@ def create_grid_within_polygon(boundary_coords, grid_resolution, altitude):
 	return waypoints
 
 def load_plan_file(plan_file_path):
-    with open(plan_file_path, 'r') as file:
-        plan_data = json.load(file)
+	with open(plan_file_path, 'r') as file:
+		plan_data = json.load(file)
 
-    waypoints = []
-    for item in plan_data['mission']['items']:
-        if item['command'] == 16:  # MAV_CMD_NAV_WAYPOINT
-            lat = item['params'][4]
-            lon = item['params'][5]
-            alt = item['params'][6]
-            waypoints.append((lat, lon, alt))
+	waypoints = []
+	for item in plan_data['mission']['items']:
+		if item['command'] == 16:  # MAV_CMD_NAV_WAYPOINT
+			lat = item['params'][4]
+			lon = item['params'][5]
+			alt = item['params'][6]
+			waypoints.append((lat, lon, alt))
 
-    waypoints.append((lat, lon, alt))
+	return waypoints
 
-    return waypoints
+def get_mission_back(plan_back, waypoints):
+	if not plan_back:
+			waypoints_back = list(reversed(waypoints))
+			home_coords = load_base_coordinates()
+			home_coords_tuple = (home_coords['latitude'], home_coords['longitude'], waypoints[-1][2])
+
+			waypoints_back = waypoints_back[1:]
+			waypoints_back.append(home_coords_tuple)
+			waypoints_back.append(home_coords_tuple)
+			waypoints_back.append(home_coords_tuple)
+	else:
+		waypoints_back = load_plan_file(plan_back)
+		waypoints_back.append(waypoints_back[-1])
+	return waypoints_back

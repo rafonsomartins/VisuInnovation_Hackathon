@@ -3,7 +3,7 @@ from sensors_utils import get_lidar_data
 import os
 import time
 from connection import vehicle
-from drone_utils import load_plan_file
+from drone_utils import load_plan_file, get_mission_back
 
 def mission(waypoints):
 	for waypoint in waypoints:
@@ -56,14 +56,10 @@ def populate_lidar(vehicle, altitude, waypoints):
 
 def run_mission(plan_file_name, plan_back):
 	waypoints = load_plan_file(plan_file_name)
+	waypoints_back = get_mission_back(plan_back, waypoints)
 
-	if not plan_back:
-		waypoints_back = list(reversed(waypoints))
-	else:
-		waypoints_back = load_plan_file(plan_back)
+	waypoints.append(waypoints[-1])
 
 	run_route(vehicle, waypoints)
-
 	time.sleep(1)
-
 	run_route(vehicle, waypoints_back)

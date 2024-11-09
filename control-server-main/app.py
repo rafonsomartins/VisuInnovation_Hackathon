@@ -5,6 +5,8 @@ from drone_utils import save_base_coordinates, parse_waypoints, create_grid_with
 from connection import app, vehicle
 import os
 
+BASE_ROUTE_PATH = './.Drone_info/.routes'
+
 @app.route('/test_failsafe', methods=['GET'])
 def low_battery():
 	vehicle.parameters['FS_THR_ENABLE'] = 1 
@@ -110,6 +112,9 @@ def run_mission_endpoint():
 	data = request.get_json()
 	plan_file_name = data.get('plan_file_name')
 	plan_back = data.get('plan_back')
+
+	plan_file_name = os.path.join(BASE_ROUTE_PATH, plan_file_name)
+	plan_back = os.path.join(BASE_ROUTE_PATH, plan_back) if plan_back else None
 
 	if not plan_file_name:
 		return jsonify({"error": "plan_file_name is required"}), 400

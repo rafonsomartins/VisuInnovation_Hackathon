@@ -80,9 +80,7 @@ def run_route(vehicle, waypoints):
 
 	set_mode("AUTO", 15)
 
-	while vehicle.commands.next != len(waypoints): 
-		# Check the current waypoint index
-		current_wp = vehicle.commands.next
+	while vehicle.commands.next < len(waypoints):
 		time.sleep(1)
 	
 	# Pause briefly before initiating landing

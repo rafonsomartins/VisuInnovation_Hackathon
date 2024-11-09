@@ -1,59 +1,109 @@
-from flask import Flask, request, jsonify
-from dronekit import connect, VehicleMode, LocationGlobalRelative, set_mode
-import time
+from flask import request, jsonify
+from drone_control import my_goto
+from missions import delivery, mission, populate_lidar
+from drone_utils import save_base_coordinates, parse_waypoints, create_grid_within_polygon
+from connection import app, vehicle
+import os
 
-app = Flask(__name__)
-vehicle = connect('127.0.0.1:14550', wait_ready=True)
+@app.route('/test_failsafe', methods=['GET'])
+def low_battery():
+	vehicle.parameters['FS_THR_ENABLE'] = 1 
+	vehicle.parameters['BATT_LOW_VOLT'] = 10.0
+	vehicle.parameters['GPS_TYPE'] = 0 
+	my_goto(-35.362387, 149.16839383, 10, 10)
+	return jsonify({'status': 'Mission ended'}), 200
 
-@app.route('/start_mission', methods=['POST'])
-def start_mission():
-    try:
-        data = request.get_json()
-        route_name = data.get('route_name')
+@app.route('/set_home', methods=['POST'])
+def set_home():
+	data = request.get_json()
+	if 'latitude' not in data or 'longitude' not in data:
+		return jsonify({'error': 'Please provide latitude and longitude in the request body'}), 400
 
-        if not route_name:
-            return jsonify({'error': 'No route name provided'}), 400
+	latitude = data['latitude']
+	longitude = data['longitude']
+	save_base_coordinates(latitude, longitude)
+	return jsonify({'status': 'Home coordinates updated successfully'}), 200
 
-        # 1. Arm the drone
-        arm_and_takeoff(10)  # Takeoff to 10 meters
+@app.route('/status', methods=['GET'])
+def status():
+	""" Return the current status of the drone """
+	return jsonify({
+		'mode': vehicle.mode.name,
+		'armed': vehicle.armed,
+		'altitude': vehicle.location.global_relative_frame.alt,
+		'location': {
+			'lat': vehicle.location.global_frame.lat,
+			'lon': vehicle.location.global_frame.lon,
+			'alt': vehicle.location.global_frame.alt
+		}
+	}), 200
 
-        # 2. Execute the mission
-        print(f"Executing mission: {route_name}")
-        start_mission_by_name(route_name)
+@app.route('/import_mission', methods=['POST'])
+def import_mission():
+	# Check if the post request has the file part
+	if 'waypoints_file' not in request.files:
+		return jsonify({'error': 'No file part'}), 400
+	
+	file = request.files['waypoints_file']
+	
+	# If the user does not select a file
+	if file.filename == '':
+		return jsonify({'error': 'No selected file'}), 400
+	
+	# Save the file to a temporary location
+	file_path = os.path.join("/tmp", file.filename)
+	file.save(file_path)
+	
+	# Parse the waypoints from the file
+	waypoints = parse_waypoints(file_path)
+	
+	return jsonify({
+		'status': 'Mission uploaded successfully',
+		'waypoints': waypoints
+	}), 200
 
-        return jsonify({'status': f'Mission {route_name} started successfully'}), 200
+@app.route('/start_mission', methods=['GET'])
+def start_mission(waypoints):
+	mission(waypoints)
+	return jsonify({
+		'status': 'Mission done successfully'
+	}), 200
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+@app.route('/simple_delivery', methods=['POST'])
+def simple_delivery():
+	data = request.get_json()
+	if 'latitude' not in data or 'longitude' not in data:
+		return jsonify({'error': 'Please provide latitude and longitude in the request body'}), 400
 
-def arm_and_takeoff(altitude):
-	set_mode("GUIDED")
-	vehicle.armed = True
-	while not vehicle.armed:
-		time.sleep(1)
-	vehicle.simple_takeoff(altitude)
-	while True:
-		if vehicle.location.global_relative_frame.alt >= altitude * 0.95:
-			break
-		time.sleep(1)
+	latitude = data['latitude']
+	longitude = data['longitude']
 
-def start_mission_by_name(route_name):
-    """
-    Starts a predefined mission loaded in the vehicle based on route_name.
-    """
-    # Assuming that the missions are preloaded into the vehicle
-    vehicle.commands.next = 0  # Reset mission to the first waypoint
-    vehicle.mode = VehicleMode("AUTO")  # Start the mission
+	delivery(latitude, longitude)
+	return jsonify({'status': 'Mission ended'}), 200
 
-    while True:
-        next_waypoint = vehicle.commands.next
-        print(f"Executing waypoint {next_waypoint}")
-        
-        # Check if mission is complete
-        if next_waypoint == 0:
-            print(f"Mission {route_name} completed")
-            break
-        time.sleep(1)
+@app.route('/map_zone', methods=['POST'])
+def map_zone():
+	data = request.get_json()
+
+	if 'boundary_coords' not in data or 'altitude' not in data:
+		return jsonify({'error': 'Please provide boundary coordinates and altitude'}), 400
+	
+	boundary_coords = data['boundary_coords']
+	altitude = data['altitude']
+	grid_resolution = data.get('grid_resolution', 0.0001)  # default resolution if not provided
+
+	# Create grid of waypoints within the boundary
+	waypoints = create_grid_within_polygon(boundary_coords, grid_resolution, altitude)
+
+	if not waypoints:
+		return jsonify({'error': 'No valid waypoints generated within the boundary'}), 400
+
+	lidar_log_file = populate_lidar(vehicle, altitude, waypoints)
+
+	return jsonify({
+		'status': 'Mapping completed successfully',
+		'log_file': lidar_log_file
+	}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+	app.run(host='0.0.0.0', port=1559)

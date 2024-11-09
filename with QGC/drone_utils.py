@@ -2,7 +2,6 @@ import os
 import json
 from shapely.geometry import Polygon, Point
 import numpy as np
-from geopy.distance import geodesic
 
 base_coordinates_file = "/home/ralves-e/.Drone_info/base_coordinates.txt"
 
@@ -64,19 +63,3 @@ def create_grid_within_polygon(boundary_coords, grid_resolution, altitude):
 				waypoints.append({'latitude': lat, 'longitude': lon, 'altitude': altitude})
 
 	return waypoints
-
-def load_plan_file(plan_file_path):
-    with open(plan_file_path, 'r') as file:
-        plan_data = json.load(file)
-
-    waypoints = []
-    for item in plan_data['mission']['items']:
-        if item['command'] == 16:  # MAV_CMD_NAV_WAYPOINT
-            lat = item['params'][4]
-            lon = item['params'][5]
-            alt = item['params'][6]
-            waypoints.append((lat, lon, alt))
-
-    waypoints.append((lat, lon, alt))
-
-    return waypoints

@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from drone_control import my_goto
-from missions import delivery, mission, populate_lidar
+from missions import delivery, mission, populate_lidar, run_mission
 from drone_utils import save_base_coordinates, parse_waypoints, create_grid_within_polygon
 from connection import app, vehicle
 import os
@@ -104,6 +104,21 @@ def map_zone():
 		'status': 'Mapping completed successfully',
 		'log_file': lidar_log_file
 	}), 200
+
+@app.route('/run_mission', methods=['POST'])
+def run_mission_endpoint():
+	data = request.get_json()
+	plan_file_name = data.get('plan_file_name')
+	plan_back = data.get('plan_back')
+
+	if not plan_file_name:
+		return jsonify({"error": "plan_file_name is required"}), 400
+	try:
+		# Chama a função run_mission passando o nome do arquivo .plan
+		run_mission(plan_file_name, plan_back)
+		return jsonify({"message": "Mission started successfully!"}), 200
+	except Exception as e:
+		return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=1559)

@@ -1,16 +1,20 @@
-from dronekit import VehicleMode, LocationGlobalRelative
+from dronekit import VehicleMode, LocationGlobalRelative, Command
 import time
 from drone_utils import get_distance_metres, load_base_coordinates
 from connection import vehicle
+from pymavlink import mavutil
 
 TAKEOFF_ALTITUDE = 10
 CLOSE_ENOUGH_DIST = 1
-STD_SPEED = 30
+STD_SPEED = 60
 
-def set_mode(str):
+def set_mode(str, timeout=10):
 	vehicle.mode = VehicleMode(str)
-	while not vehicle.mode.name == str:
+	start_time = time.time()
+	while not vehicle.mode.name == str and time.time() - start_time < timeout:
 		time.sleep(1)
+	if not vehicle.mode.name == str:
+		raise TimeoutError(f"Failed to set vehicle mode to {str}")
 
 def arm_and_takeoff(altitude):
 	set_mode("GUIDED")
@@ -44,4 +48,43 @@ def land_drone():
 def return_home():
 	home_coords = load_base_coordinates()
 	my_goto(home_coords['latitude'], home_coords['longitude'], TAKEOFF_ALTITUDE, STD_SPEED)
+	land_drone()
+
+def upload_mission(vehicle, waypoints):
+	cmds = vehicle.commands
+	cmds.clear()
+
+	# Adicionar comando de decolagem
+	cmds.add(Command(
+		0, 0, 0,
+		mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+		mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+		0, 0, 0, 0, 0, 0,
+		0, 0, 10))  # 10 metros de altitude
+
+	# Adicionar os waypoints extraídos do arquivo
+	for lat, lon, alt in waypoints:
+		cmds.add(Command(
+			0, 0, 0,
+			mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+			mavutil.mavlink.MAV_CMD_NAV_WAYPOINT,
+			0, 0, 0, 0, 0, 0,
+			lat, lon, alt))
+
+	# Enviar missão
+	cmds.upload()
+
+def run_route(vehicle, waypoints):
+	arm_and_takeoff(10)
+	upload_mission(vehicle, waypoints)
+
+	set_mode("AUTO", 15)
+
+	while vehicle.commands.next != len(waypoints): 
+		# Check the current waypoint index
+		current_wp = vehicle.commands.next
+		time.sleep(1)
+	
+	# Pause briefly before initiating landing
+	time.sleep(0.5)
 	land_drone()

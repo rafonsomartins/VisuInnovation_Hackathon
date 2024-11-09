@@ -1,0 +1,3 @@
+sempre que o drone voa recolhe dados do lidar e vai populando o mapa para facilitar as alturas com falhas de bateria
+
+if not base_coordinates then base_coordinates

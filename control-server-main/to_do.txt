@@ -1,6 +1,7 @@
 popular lidar com baixa bateria
-- fazer a funcao
+- fazer a funcao -- done
 - integrar a logica
+- testar
 
 previsoes de bateria
 - pre-flight (joao)

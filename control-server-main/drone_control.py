@@ -1,8 +1,10 @@
 from dronekit import VehicleMode, LocationGlobalRelative, Command
 import time
+import os
 from drone_utils import get_distance_metres, load_base_coordinates
-from globals import vehicle
+from globals import vehicle, LiDAR_FILE
 from pymavlink import mavutil
+from sensors_utils import simulate_lidar
 
 TAKEOFF_ALTITUDE = 10
 CLOSE_ENOUGH_DIST = 1
@@ -86,3 +88,28 @@ def run_route(vehicle, waypoints):
 	# Pause briefly before initiating landing
 	time.sleep(0.5)
 	land_drone()
+
+def populate_lidar(vehicle, altitude, waypoints):
+	with open(LiDAR_FILE, 'w') as log_file:
+		log_file.write("Latitude,Longitude,Altitude,LiDAR Distance (m)\n")
+
+		for waypoint in waypoints:
+			latitude = waypoint['latitude']
+			longitude = waypoint['longitude']
+			altitude = waypoint['altitude']
+
+			# Fly to the waypoint
+			my_goto(latitude, longitude, altitude, 10)  # Speed set to 10
+
+			i = 0
+			lidar_data = None
+			while lidar_data == None and i < 2:
+				lidar_data = simulate_lidar(vehicle)
+				i += 1
+				time.sleep(1)
+			if lidar_data is not None:
+				log_file.write(f"{latitude},{longitude},{altitude},{lidar_data}\n")
+			else:
+				log_file.write(f"{latitude},{longitude},{altitude},No data\n")
+
+	return LiDAR_FILE

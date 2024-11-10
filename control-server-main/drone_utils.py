@@ -1,6 +1,51 @@
 import os
 import json
 from globals import BASE_COORDINATES_FILE, vehicle
+from shapely.geometry import Polygon, Point
+import numpy as np
+
+def create_grid_within_polygon(boundary_coords, grid_resolution, altitude):
+	polygon = Polygon(boundary_coords)
+
+	# Determine the bounding box for the polygon
+	min_lat = min(coord[0] for coord in boundary_coords)
+	max_lat = max(coord[0] for coord in boundary_coords)
+	min_lon = min(coord[1] for coord in boundary_coords)
+	max_lon = max(coord[1] for coord in boundary_coords)
+
+	# Create a grid of points covering the bounding box
+	lat_points = np.arange(min_lat, max_lat, grid_resolution)
+	lon_points = np.arange(min_lon, max_lon, grid_resolution)
+
+	# Check each grid point to see if it's inside the polygon
+	waypoints = []
+	for lat in lat_points:
+		for lon in lon_points:
+			point = Point(lat, lon)
+			if polygon.contains(point):
+				waypoints.append({'latitude': lat, 'longitude': lon, 'altitude': altitude})
+
+	return waypoints
+
+def find_best_landing_spot(lidar_log_file):
+    best_spot = None
+    min_variation = float('inf')
+
+    with open(lidar_log_file, 'r') as file:
+        next(file)  # Skip header
+        for line in file:
+            lat, lon, alt, lidar_distance = line.strip().split(',')
+            lidar_distance = float(lidar_distance)
+            
+            # Using variation as a placeholder for flatness criteria
+            variation = abs(lidar_distance - 1.0)  # Ideal distance around 1 meter (adjust as needed)
+            
+            if variation < min_variation:
+                min_variation = variation
+                best_spot = (float(lat), float(lon), float(alt))
+
+    print(f"Best landing spot found at: {best_spot}")
+    return best_spot
 
 def load_base_coordinates():
 	if os.path.exists(BASE_COORDINATES_FILE):
@@ -80,3 +125,5 @@ def check_and_create_home_coords():
 		# Save coordinates to the home_coords file
 		with open(BASE_COORDINATES_FILE, 'w') as file:
 			json.dump(home_coords, file)
+
+

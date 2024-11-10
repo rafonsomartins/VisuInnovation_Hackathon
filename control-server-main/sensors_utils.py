@@ -1,5 +1,6 @@
 from pymavlink import mavutil
 import time
+import random
 
 # def lidar_callback(message):
 # 	current_distance = message.current_distance / 100.0  # Convert from cm to meters
@@ -22,3 +23,7 @@ def get_lidar_data(vehicle):
 	lidar_data = vehicle.rangefinder.distance
 
 	return lidar_data
+
+def simulate_lidar():
+    # Returns a simulated LiDAR distance in meters
+    return round(random.uniform(0.5, 5.0), 2)

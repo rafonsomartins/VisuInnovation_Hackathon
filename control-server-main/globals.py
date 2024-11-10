@@ -4,6 +4,7 @@ import threading
 
 BASE_ROUTE_PATH = './.Drone_info/.routes'
 BASE_COORDINATES_FILE = "./.Drone_info/base_coordinates.txt"
+LiDAR_FILE = "./.Drone_info/lidar_logs.txt"
 
 app = Flask(__name__)
 

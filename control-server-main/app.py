@@ -1,19 +1,8 @@
 from flask import request, jsonify
-from drone_control import my_goto
-from missions import delivery, mission, populate_lidar, run_mission
-from drone_utils import save_base_coordinates, parse_waypoints, create_grid_within_polygon
-from connection import app, vehicle
+from missions import delivery, run_mission
+from drone_utils import save_base_coordinates, parse_waypoints
+from globals import app, return_mission_event, is_return_confirm_allowed, BASE_ROUTE_PATH
 import os
-
-BASE_ROUTE_PATH = './.Drone_info/.routes'
-
-@app.route('/test_failsafe', methods=['GET'])
-def low_battery():
-	vehicle.parameters['FS_THR_ENABLE'] = 1 
-	vehicle.parameters['BATT_LOW_VOLT'] = 10.0
-	vehicle.parameters['GPS_TYPE'] = 0 
-	my_goto(-35.362387, 149.16839383, 10, 10)
-	return jsonify({'status': 'Mission ended'}), 200
 
 @app.route('/set_home', methods=['POST'])
 def set_home():
@@ -25,20 +14,6 @@ def set_home():
 	longitude = data['longitude']
 	save_base_coordinates(latitude, longitude)
 	return jsonify({'status': 'Home coordinates updated successfully'}), 200
-
-@app.route('/status', methods=['GET'])
-def status():
-	""" Return the current status of the drone """
-	return jsonify({
-		'mode': vehicle.mode.name,
-		'armed': vehicle.armed,
-		'altitude': vehicle.location.global_relative_frame.alt,
-		'location': {
-			'lat': vehicle.location.global_frame.lat,
-			'lon': vehicle.location.global_frame.lon,
-			'alt': vehicle.location.global_frame.alt
-		}
-	}), 200
 
 @app.route('/import_mission', methods=['POST'])
 def import_mission():
@@ -53,7 +28,7 @@ def import_mission():
 		return jsonify({'error': 'No selected file'}), 400
 	
 	# Save the file to a temporary location
-	file_path = os.path.join("/tmp", file.filename)
+	file_path = os.path.join(BASE_ROUTE_PATH, file.filename)
 	file.save(file_path)
 	
 	# Parse the waypoints from the file
@@ -62,13 +37,6 @@ def import_mission():
 	return jsonify({
 		'status': 'Mission uploaded successfully',
 		'waypoints': waypoints
-	}), 200
-
-@app.route('/start_mission', methods=['GET'])
-def start_mission(waypoints):
-	mission(waypoints)
-	return jsonify({
-		'status': 'Mission done successfully'
 	}), 200
 
 @app.route('/simple_delivery', methods=['POST'])
@@ -83,29 +51,22 @@ def simple_delivery():
 	delivery(latitude, longitude)
 	return jsonify({'status': 'Mission ended'}), 200
 
-@app.route('/map_zone', methods=['POST'])
-def map_zone():
-	data = request.get_json()
+@app.route('/check_return_status', methods=['GET'])
+def check_return_status():
+	global is_return_confirm_allowed
+	return jsonify({"return_confirm_allowed": is_return_confirm_allowed}), 200
 
-	if 'boundary_coords' not in data or 'altitude' not in data:
-		return jsonify({'error': 'Please provide boundary coordinates and altitude'}), 400
-	
-	boundary_coords = data['boundary_coords']
-	altitude = data['altitude']
-	grid_resolution = data.get('grid_resolution', 0.0001)  # default resolution if not provided
 
-	# Create grid of waypoints within the boundary
-	waypoints = create_grid_within_polygon(boundary_coords, grid_resolution, altitude)
+@app.route('/confirm_return', methods=['POST'])
+def confirm_return():
+    global is_return_confirm_allowed
+    if not is_return_confirm_allowed:
+        return jsonify({"error": "Return confirmation not allowed yet."}), 400
 
-	if not waypoints:
-		return jsonify({'error': 'No valid waypoints generated within the boundary'}), 400
-
-	lidar_log_file = populate_lidar(vehicle, altitude, waypoints)
-
-	return jsonify({
-		'status': 'Mapping completed successfully',
-		'log_file': lidar_log_file
-	}), 200
+    # Signal to run the return route by setting the event
+    is_return_confirm_allowed = False  # Reset the confirmation allowance
+    return_mission_event.set()
+    return jsonify({"message": "Return route confirmed, drone will proceed back."}), 200
 
 @app.route('/run_mission', methods=['POST'])
 def run_mission_endpoint():
@@ -119,9 +80,8 @@ def run_mission_endpoint():
 	if not plan_file_name:
 		return jsonify({"error": "plan_file_name is required"}), 400
 	try:
-		# Chama a função run_mission passando o nome do arquivo .plan
 		run_mission(plan_file_name, plan_back)
-		return jsonify({"message": "Mission started successfully!"}), 200
+		return jsonify({"message": "Mission ended successfully!"}), 200
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
 

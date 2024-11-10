@@ -1,7 +1,7 @@
 from dronekit import VehicleMode, LocationGlobalRelative, Command
 import time
 from drone_utils import get_distance_metres, load_base_coordinates
-from connection import vehicle
+from globals import vehicle
 from pymavlink import mavutil
 
 TAKEOFF_ALTITUDE = 10

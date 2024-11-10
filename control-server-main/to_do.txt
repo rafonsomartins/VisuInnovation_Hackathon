@@ -1,3 +1,19 @@
 sempre que o drone voa recolhe dados do lidar e vai populando o mapa para facilitar as alturas com falhas de bateria
 
 if not base_coordinates then base_coordinates
+
+popular lidar com baixa bateria
+- fazer a funcao
+- integrar a logica
+
+previsoes de bateria
+- pre-flight
+- real-time
+- pos-flight (guardar na base sql)
+
+App:
+- utilizador user, fica sempre a enviar GET requests para '/confirm_return_status' e quando receber uma resposta positiva 
+possibilitar o botao que envia um POST request para '/confirm_return'
+- possibilidade para enviar o nome de duas rotas
+- possibilidade para fazer upload das missoes para o servidor
+- possibilidade para mudar as coordenadas da base

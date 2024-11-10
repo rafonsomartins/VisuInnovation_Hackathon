@@ -2,20 +2,18 @@ import os
 import json
 from shapely.geometry import Polygon, Point
 import numpy as np
-from geopy.distance import geodesic
-
-base_coordinates_file = "./.Drone_info/base_coordinates.txt"
+from globals import BASE_COORDINATES_FILE
 
 def load_base_coordinates():
-	if os.path.exists(base_coordinates_file):
-		with open(base_coordinates_file, 'r') as file:
+	if os.path.exists(BASE_COORDINATES_FILE):
+		with open(BASE_COORDINATES_FILE, 'r') as file:
 			return json.load(file)
 	else:
 		return None
 
 def save_base_coordinates(latitude, longitude):
 	home_coords = {"latitude": latitude, "longitude": longitude}
-	with open(base_coordinates_file, 'w') as file:
+	with open(BASE_COORDINATES_FILE, 'w') as file:
 		json.dump(home_coords, file)
 
 def get_distance_metres(loc1, loc2):
@@ -40,29 +38,6 @@ def parse_waypoints(file_path):
 				'longitude': longitude,
 				'altitude': altitude
 			})
-	return waypoints
-
-def create_grid_within_polygon(boundary_coords, grid_resolution, altitude):
-	polygon = Polygon(boundary_coords)
-
-	# Determine the bounding box for the polygon
-	min_lat = min(coord[0] for coord in boundary_coords)
-	max_lat = max(coord[0] for coord in boundary_coords)
-	min_lon = min(coord[1] for coord in boundary_coords)
-	max_lon = max(coord[1] for coord in boundary_coords)
-
-	# Create a grid of points covering the bounding box
-	lat_points = np.arange(min_lat, max_lat, grid_resolution)
-	lon_points = np.arange(min_lon, max_lon, grid_resolution)
-
-	# Check each grid point to see if it's inside the polygon
-	waypoints = []
-	for lat in lat_points:
-		for lon in lon_points:
-			point = Point(lat, lon)
-			if polygon.contains(point):
-				waypoints.append({'latitude': lat, 'longitude': lon, 'altitude': altitude})
-
 	return waypoints
 
 def load_plan_file(plan_file_path):

@@ -1,15 +1,11 @@
-sempre que o drone voa recolhe dados do lidar e vai populando o mapa para facilitar as alturas com falhas de bateria
-
-if not base_coordinates then base_coordinates
-
 popular lidar com baixa bateria
 - fazer a funcao
 - integrar a logica
 
 previsoes de bateria
-- pre-flight
-- real-time
-- pos-flight (guardar na base sql)
+- pre-flight (joao)
+- real-time (AUTO-LAND com o LiDAR - Afonso)
+- pos-flight (guardar na base sql - Diogo e Manel)
 
 App:
 - utilizador user, fica sempre a enviar GET requests para '/confirm_return_status' e quando receber uma resposta positiva 
@@ -17,3 +13,25 @@ possibilitar o botao que envia um POST request para '/confirm_return'
 - possibilidade para enviar o nome de duas rotas
 - possibilidade para fazer upload das missoes para o servidor
 - possibilidade para mudar as coordenadas da base
+
+Goal:
+Dia 21, em Lisboa, fazer esta demonstracao:
+
+dois telemoveis como Guest, um computador com a aplicacao como Engeneer e um telemovel como user. O SITL (simulador) a correr. Todos os ecras a serem partilhados.
+
+No computador sao criadas 3 rotas: Quarto1.plan, Suite_principal_ida.plan, Suite_principal_volta.plan.
+As rotas sao criadas com o software que eles usam QGroundControl e adicionadas a aplicacao.
+Idealmente os ficheiros seriam enviados para o servidor pela aplicacao (no computador).
+
+A pessoa com o telemovel de utilizador explica que carregou a encomenda e aciona a missao (Suite Principal, por exemplo).
+
+O drone vai ate a suite e aterra. o botao de confirmacao aparece para o Guest da Suite apenas (nao para o do quarto 1).
+O Guest da suite explica que descarregou a encomenda e aceita.
+
+O drone volta a base por uma rota diferente.
+
+O utilizador aciona a missao do Quarto 1.
+
+O guest do Quarto 1 diz que recebeu.
+
+Explicamos que neste caso o drone vai seguir a rota inversa porque nao tem mais indicacoes.

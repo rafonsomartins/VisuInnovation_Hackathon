@@ -1,8 +1,6 @@
 import os
 import json
-from shapely.geometry import Polygon, Point
-import numpy as np
-from globals import BASE_COORDINATES_FILE
+from globals import BASE_COORDINATES_FILE, vehicle
 
 def load_base_coordinates():
 	if os.path.exists(BASE_COORDINATES_FILE):
@@ -68,3 +66,17 @@ def get_mission_back(plan_back, waypoints):
 		waypoints_back = load_plan_file(plan_back)
 		waypoints_back.append(waypoints_back[-1])
 	return waypoints_back
+
+def check_and_create_home_coords():
+	if not os.path.exists(BASE_COORDINATES_FILE) and not vehicle.armed:
+		# Retrieve current location from the drone
+		location = vehicle.location.global_frame
+		home_coords = {
+			"latitude": location.lat,
+			"longitude": location.lon,
+			"altitude": location.alt
+		}
+
+		# Save coordinates to the home_coords file
+		with open(BASE_COORDINATES_FILE, 'w') as file:
+			json.dump(home_coords, file)

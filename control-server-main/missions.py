@@ -1,9 +1,6 @@
 from drone_control import my_goto, STD_SPEED, TAKEOFF_ALTITUDE, land_drone, return_home, run_route
-from sensors_utils import get_lidar_data
 from globals import vehicle, return_mission_event, is_return_confirm_allowed
 from drone_utils import load_plan_file, get_mission_back
-import os
-import time
 
 def delivery(latitude, longitude):
 	my_goto(latitude, longitude, TAKEOFF_ALTITUDE, STD_SPEED)

@@ -57,6 +57,9 @@
 
 # mission.py:
 
+# import os
+# import time
+
 # def mission(waypoints):
 # 	for waypoint in waypoints:
 # 		latitude = waypoint['latitude']
@@ -104,6 +107,9 @@
 
 
 # drone_utils.py:
+
+# from shapely.geometry import Polygon, Point
+# import numpy as np
 
 # def create_grid_within_polygon(boundary_coords, grid_resolution, altitude):
 # 	polygon = Polygon(boundary_coords)

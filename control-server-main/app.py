@@ -56,7 +56,6 @@ def check_return_status():
 	global is_return_confirm_allowed
 	return jsonify({"return_confirm_allowed": is_return_confirm_allowed}), 200
 
-
 @app.route('/confirm_return', methods=['POST'])
 def confirm_return():
     global is_return_confirm_allowed

@@ -32,14 +32,14 @@ def auto_land_if_low_battery(vehicle):
         # Define an area around the current location to scan
         current_location = vehicle.location.global_relative_frame
         boundary_coords = [
-            (current_location.lat - 0.0001, current_location.lon - 0.0001),
-            (current_location.lat + 0.0001, current_location.lon - 0.0001),
-            (current_location.lat + 0.0001, current_location.lon + 0.0001),
-            (current_location.lat - 0.0001, current_location.lon + 0.0001),
+            (current_location.lat - 0.00001, current_location.lon - 0.00001),
+            (current_location.lat + 0.00001, current_location.lon - 0.00001),
+            (current_location.lat + 0.00001, current_location.lon + 0.00001),
+            (current_location.lat - 0.00001, current_location.lon + 0.00001),
         ]
 
         # Create grid and populate LiDAR data
-        grid_resolution = 0.00005  # Smaller grid resolution for more precise landing data
+        grid_resolution = 0.000005  # Smaller grid resolution for more precise landing data
         altitude = current_location.alt
         waypoints = create_grid_within_polygon(boundary_coords, grid_resolution, altitude)
 

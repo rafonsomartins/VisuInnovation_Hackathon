@@ -1,3 +1,15 @@
+sitl:
+- incluir ficheiro de parametros com:
+	- vento
+	- peso
+	- ...
+- ativar o failsafe de bateria quando ligo o simulador
+- usar rally points na rota
+
+como ligar o servidor ao drone?
+- radio -- rc
+- earlink -- check the code of QGroundControl-Herelink.apk -- in Desktop
+
 popular lidar com baixa bateria
 - fazer a funcao -- done
 - integrar a logica

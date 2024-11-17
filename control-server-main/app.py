@@ -1,8 +1,14 @@
 from flask import request, jsonify
-from missions import delivery, run_mission
+from missions import delivery, run_mission, auto_land_if_low_battery
 from drone_utils import save_base_coordinates, parse_waypoints
 from globals import app, return_mission_event, is_return_confirm_allowed, BASE_ROUTE_PATH
 import os
+from drone_control import my_goto
+
+@app.route('/Auto-landing_test', methods=['POST'])
+def	test_auto_landing():
+	my_goto(-35.362387, 149.168299, 10, 10)
+	auto_land_if_low_battery()
 
 @app.route('/set_home', methods=['POST'])
 def set_home():
@@ -58,14 +64,14 @@ def check_return_status():
 
 @app.route('/confirm_return', methods=['POST'])
 def confirm_return():
-    global is_return_confirm_allowed
-    if not is_return_confirm_allowed:
-        return jsonify({"error": "Return confirmation not allowed yet."}), 400
+	global is_return_confirm_allowed
+	if not is_return_confirm_allowed:
+		return jsonify({"error": "Return confirmation not allowed yet."}), 400
 
-    # Signal to run the return route by setting the event
-    is_return_confirm_allowed = False  # Reset the confirmation allowance
-    return_mission_event.set()
-    return jsonify({"message": "Return route confirmed, drone will proceed back."}), 200
+	# Signal to run the return route by setting the event
+	is_return_confirm_allowed = False  # Reset the confirmation allowance
+	return_mission_event.set()
+	return jsonify({"message": "Return route confirmed, drone will proceed back."}), 200
 
 @app.route('/run_mission', methods=['POST'])
 def run_mission_endpoint():

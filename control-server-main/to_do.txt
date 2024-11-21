@@ -48,3 +48,11 @@ O utilizador aciona a missao do Quarto 1.
 O guest do Quarto 1 diz que recebeu.
 
 Explicamos que neste caso o drone vai seguir a rota inversa porque nao tem indicacao em contrario.
+
+Guests:
+Coordenadas e password. É como se fosse um login.
+Return_allowed: recebe as coordenadas e vê se está correto. 
+is_return_allowed: string com o numero de chars que guests na base de dados. Index é o id do guest. Login do guest é com id e password. 
+request: \check_status_return {'guest_id': guest_id}
+request: \confirm_return {'guest_id': guest_id}
+Guest id é incremental. Como é que o user sabe?

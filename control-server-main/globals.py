@@ -11,4 +11,5 @@ app = Flask(__name__)
 vehicle = connect('127.0.0.1:14550', wait_ready=True)
 
 return_mission_event = threading.Event()
-is_return_confirm_allowed = False
+
+guest = {"is_return_confirm_allowed": False, "id": 0}

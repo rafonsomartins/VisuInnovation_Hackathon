@@ -4,11 +4,13 @@ from drone_utils import save_base_coordinates, parse_waypoints
 import globals
 import os
 from drone_control import my_goto
+from db_utils import password_verificator, get_db_config, create_database
 
 @globals.app.route('/Auto-landing_test', methods=['POST'])
 def	test_auto_landing():
 	my_goto(-35.362387, 149.168299, 10, 10)
-	auto_land_if_low_battery()
+	auto_land_if_low_battery(globals.vehicle)
+	return jsonify({'status': 'Drone landed safelly!'}), 200
 
 @globals.app.route('/set_home', methods=['POST'])
 def set_home():
@@ -84,20 +86,51 @@ def confirm_return():
 @globals.app.route('/run_mission', methods=['POST'])
 def run_mission_endpoint():
 	data = request.get_json()
+	print(data)
 	plan_file_name = data.get('plan_file_name')
 	plan_back = data.get('plan_back')
 	globals.guest["id"] = data.get('guest_id')
+	username = data.get('username')
 
 	plan_file_name = os.path.join(globals.BASE_ROUTE_PATH, plan_file_name)
 	plan_back = os.path.join(globals.BASE_ROUTE_PATH, plan_back) if plan_back else None
 
 	if not plan_file_name:
 		return jsonify({"error": "plan_file_name is required"}), 400
+	if not globals.guest["id"]:
+		return jsonify({"error": "guest_id is required"}), 400
 	try:
 		run_mission(plan_file_name, plan_back)
 		return jsonify({"message": "Mission ended successfully!"}), 200
 	except Exception as e:
 		return jsonify({"error": str(e)}), 500
+
+@globals.app.route('/login', methods=['POST'])
+def login():
+	data = request.get_json()
+	user = data.get('username')
+	password = data.get('password')
+
+	role = password_verificator(user, password)
+	if not role:
+		return jsonify({"error": "User not found"}), 400
+	elif role == 1:
+		return jsonify({"error": "Password incorrect!"}), 400
+	else:
+		return jsonify({f"role: {role}"}), 200
+
+@globals.app.route('/create_db', methods=['POST']) #Just use this route manually when the database is not created
+def create_db():
+    try:
+        db_config = get_db_config()
+
+        create_database()  # Create the database
+        create_tables()    # Create the tables
+
+        return "Database and tables created successfully!"
+
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 if __name__ == '__main__':
 	globals.app.run(host='0.0.0.0', port=14459)

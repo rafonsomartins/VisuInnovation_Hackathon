@@ -1,9 +1,0 @@
-atualizar a versao com websocket
-
-Novas coordenadas (Douro): direita -- Longitude: -7.5766  Latitude: 41.1621 altitude: 200m ate: esquerda -- Longitude: -7.5887  Latitude: 41.1592 altitude:150m . centro: Longitude: -7.5832  Latitude: 41.1609 . Outros limites (superiores): direita --Longitude: -7.5805  Latitude: 41.1667; centro -- Longitude: -7.5836  Latitude: 41.1628 esquerda -- Longitude: -7.5905  Latitude: 41.1631.
-
-no centro sobe de 165 m para 340 m. esquerda : 130 m para 265 m. direita : 175 m para 245 m. (passar o drone e ler um mapa tipo FdF, posso mesmo usar um mapa do FdF inicialmente para experimentar a criacao do mapa topografico)
-
-o drone nao deve parar no chao, ou seja nao vai ficar com altura de 0 metros.
-
-usar o LiDAR para ter altitude ao chao (AGL), com atencao a niveis mudancas drasticas de altitude. Ideia: primeiras viagens com o drone a uma altitude alta para mapear topograficamente a area. COmbinar o RTK com o LiDAR com a ajuda do chatcpt (para escolher e implementar um algoritmo). usar os dados das rotas do LiDAR para mapear atualizar o mapa topografico que temos.

@@ -126,4 +126,14 @@ def check_and_create_home_coords():
 		with open(BASE_COORDINATES_FILE, 'w') as file:
 			json.dump(home_coords, file)
 
-
+def battery_check_distance(waypoints, vehicle_battery):
+	distance = 0
+	for i in range(len(waypoints) - 1):
+		distance += get_distance_metres(waypoints[i], waypoints[i + 1])
+	nedded_battery = (vehicle_battery * 100) / 7.5
+	nedded_battery *= 0.9
+	if nedded_battery >= vehicle_battery:
+		return 1
+	else:
+		print("Not enough battery!")
+		return 0

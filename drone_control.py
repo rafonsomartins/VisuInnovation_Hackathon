@@ -104,7 +104,7 @@ def populate_lidar(vehicle, altitude, waypoints):
 			i = 0
 			lidar_data = None
 			while lidar_data == None and i < 2:
-				lidar_data = simulate_lidar(vehicle)
+				lidar_data = simulate_lidar()
 				i += 1
 				time.sleep(1)
 			if lidar_data is not None:

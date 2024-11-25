@@ -3,28 +3,57 @@ import psycopg2
 import configparser
 import os
 from datetime import datetime
+from db_connection import get_db_config, get_db_connection
 
 def get_db_config(config_file="./config/db_config.ini"):
     config = configparser.ConfigParser()
     config.read(config_file)
     return config['postgresql']
 
+def create_database():
+    config = get_db_config()
+    try:
+        conn = psycopg2.connect(
+            host=config['host'],
+            port=config['port'],
+            user=config['user'],
+            password=config['password']
+        )
+        conn.autocommit = True
+        with conn.cursor() as cursor:
+            # Check if database exists before creating
+            cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{config['database']}';")
+            exists = cursor.fetchone()
+            print(f"exists: {exists}")
+            if exists:
+                print(f"Database {config['database']} already exists.")
+            else:
+                cursor.execute(f"CREATE DATABASE {config['database']}")
+                print(f"Database {config['database']} created successfully.")
+        conn.close()
+    except Exception as e:
+        print(f"Error creating database: {e}")
+        raise
+
 def create_tables():
     config = get_db_config()
-    conn = psycopg2.connect(
-        host=config['host'],
-        port=config['port'],
-        user=config['user'],
-        password=config['password'],
-        database=config['database']
-    )
-    conn.autocommit = True
-    with conn.cursor() as cursor:
-        print(f"Creating tables in database '{config['database']}'...\n")
-        execute_sql_file(cursor, "./config/Migrations/01-SQL_Tables.sql")
-        print("Tables created successfully.\n")
-
-    conn.close()
+    try:
+        conn = psycopg2.connect(
+            host=config['host'],
+            port=config['port'],
+            user=config['user'],
+            password=config['password'],
+            database=config['database']
+        )
+        conn.autocommit = True
+        with conn.cursor() as cursor:
+            print(f"Creating tables in database '{config['database']}'...\n")
+            execute_sql_file(cursor, "./config/Migrations/01-SQL_Tables.sql")
+            print("Tables created successfully.\n")
+        conn.close()
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+        raise
 
 def reset_constrains():
     config = get_db_config()
@@ -46,29 +75,26 @@ def execute_sql_file(cursor, sql_file):
     if not os.path.isfile(sql_file):
         print(f"Error: SQL File '{sql_file}' does not exist.")
         return
-    with open(sql_file, 'r') as file:
-        sql = file.read()
-    cursor.execute(sql)
-
-struct = {
-    int log_id,
-
-
-}
+    try:
+        with open(sql_file, 'r') as file:
+            sql = file.read()
+        cursor.execute(sql)
+    except Exception as e:
+        print(f"Error executing SQL from file {sql_file}: {e}")
 
 def create_log_table(conn, mission_id):
     with conn.cursor() as cursor:
         try:
             query = f"CREATE TABLE logs.log_{mission_id} (LIKE logs.template INCLUDING ALL);"
             cursor.execute(query)
-            print("YEYYY FUNCIONOU")
             conn.commit()
         except Exception as e:
             print(e)
+            conn.rollback()
 
 def insert_mission(conn, drone_id, route_id, user_id):
     query = """
-    INSERT INTO opeations.missions (drone_id, route_id, user_id)
+    INSERT INTO operations.missions (drone_id, route_id, user_id)
     VALUES (%s, %s, %s)
     RETURNING id;
     """
@@ -109,10 +135,10 @@ def insert_status(mission_id, status):
         database=config['database']
     )
     conn.autocommit = True
-    query = f"
+    query = f"""
     INSERT INTO logs.log_{mission_id}
     VALUES (%s)
-    "
+    """
     try:
         with conn.cursor() as cursor:
             cursor.execute(query, (status))
@@ -204,7 +230,7 @@ def main():
         password=config['password'],
         database=config['database']
     )
-    
+
     args = parser.parse_args()
 
     if args.command == 'create':
@@ -228,7 +254,7 @@ def password_verificator(username, password):
                 user = cursor.fetchone()
                 if user is None:
                     return False
-                elif password == user[2]
+                elif password == user[2]:
                     return user[4]
         return 1
     except Exception as e:
@@ -242,11 +268,7 @@ def get_user_id(username):
                 user = cursor.fetchone()
                 if user is None:
                     return False
-                else
+                else:
                     return user[0]
     except Exception as e:
         print(f"Failure: unable to authenticate: {e}")
-    
-
-if __name__ == "__main__":
-    main()

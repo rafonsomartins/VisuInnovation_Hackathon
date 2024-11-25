@@ -1,3 +1,0 @@
-curl -X POST http://127.0.0.1:5000/delivery -H "Content-Type: application/json" -d '{"latitude": -35.362387, "longitude": 149.168299}'
-
-curl -X POST -F 'waypoints_file=@/path/to/mission.waypoints' http://localhost:5000/import_mission
